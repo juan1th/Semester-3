@@ -1,0 +1,210 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[a4paper,margin=25mm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!45!black,
+    urlcolor=blue!45!black,
+    pdftitle={Field Visit Report: Magna Production and Engineering Plant},
+    pdfauthor={Juanith Mathew Thomas}
+}
+
+\graphicspath{{Images/}{Images/Camera/}{Images/Oscilloscope screenshots/}}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.25em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.35em,topsep=0.3em}
+\renewcommand{\arraystretch}{1.2}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Automotive Testing}
+\fancyhead[R]{Magna field visit}
+\fancyfoot[C]{\thepage}
+\setlength{\headrulewidth}{0.4pt}
+
+\newcommand{\reportfigure}[3]{%
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[width=0.94\textwidth,height=0.58\textheight,keepaspectratio]{#1}
+        \caption{#2}
+        \label{#3}
+    \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Large Automotive Testing\par}
+    \vspace{1.8cm}
+    {\huge\bfseries Field Visit Report\par}
+    \vspace{0.5cm}
+    {\LARGE Magna Production and Engineering Plant\par}
+    \vspace{1.5cm}
+    {\large CANoe-based ECU communication and panel exercise\par}
+    \vfill
+    \begin{tabular}{>{\bfseries}rl}
+        Prepared by: & Juanith Mathew Thomas\\
+        Report date: & November 18, 2026
+    \end{tabular}
+    \vfill
+    {\large Automotive Testing\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\begin{abstract}
+This report describes a field visit to Magna's production and engineering plant, with a focus on the hands-on automotive testing exercise documented during the visit. Using a provided Vector CANoe configuration and a CAN/LIN interface, I examined ECU status messages, followed an alive counter, and built a software panel for interacting with signals. The final panel brought together three widgets: a numeric display, a meter, and a slider. Moving the potentiometer control changed its reported status, while CANoe's trace and graphics views helped relate signal values to network traffic. Oscilloscope captures also show CAN frame activity at the physical layer. The account follows the available notes and photographs; it does not invent plant-tour details or undocumented ECU specifications.
+\end{abstract}
+
+\section{Introduction}
+
+As part of Automotive Testing, I took part in a field visit to Magna's production and engineering plant. The visit connected automotive engineering concepts with a practical example of electronic control unit (ECU) communication and testing. The technical work recorded in my notes took place in a laboratory and used CANoe to inspect and interact with signals carried over a CAN network.
+
+The accompanying \texttt{Demo\_report.pdf} was used as a guide for the formal academic-report format. This report is written in my own words and focuses on the exercise and evidence from the supplied images. The materials do not document specific production-line observations, the plant's location, or the visit date, so these details are not assumed here.
+
+\subsection{Purpose and learning objectives}
+
+The exercise gave me an opportunity to:
+\begin{itemize}
+    \item understand an alive counter and what it can reveal about recurring ECU messages;
+    \item inspect decoded CAN frames and their signals in CANoe;
+    \item relate signal values to a physical control, particularly a potentiometer;
+    \item assemble a small interactive panel from software widgets; and
+    \item observe CAN traffic in both software traces and oscilloscope captures.
+\end{itemize}
+
+\section{Laboratory setup}
+
+The exercise combined a CANoe workstation, a CAN/LIN network interface, and a laboratory demonstration unit with a potentiometer and switches. A Vector VN1640A interface is visible in the photographs. It provided the connection between the workstation and the vehicle-network test setup. The photographs also show a bench multimeter and the front panel of the demonstration unit; they help document the physical setup but do not by themselves establish the unit's internal design.
+
+CANoe is a commercial vehicle-network development and test environment from Vector Informatik. The configuration used for the visit may have been prepared for the laboratory; the available evidence does not establish that the software itself is proprietary to Magna.
+
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.33 (1).jpeg}{Vector VN1640A CAN/LIN interface used in the laboratory setup.}{fig:vn1640}
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.33.jpeg}{Laboratory multimeter showing a resistance reading during the visit. The image records the displayed value but does not identify the measured component.}{fig:multimeter}
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.35 (1).jpeg}{Front panel of the demonstration unit, with its display, indicator lights, and controls.}{fig:unit-front-a}
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.35.jpeg}{A second recorded display state of the demonstration unit.}{fig:unit-front-b}
+
+\subsection{CANoe views used}
+
+The screenshots show several complementary CANoe windows:
+\begin{itemize}
+    \item \textbf{Trace}: decoded frames, identifiers, direction, and signal values;
+    \item \textbf{Graphics}: signal values plotted over time, including the alive counter and potentiometer status;
+    \item \textbf{CAN Interactive Generator}: a control frame and its signal fields; and
+    \item \textbf{Panel}: graphical controls and indicators associated with the network signals.
+\end{itemize}
+Together, these views made it possible to connect the physical input, the decoded CAN message, and the graphical presentation without treating any single view as the whole test.
+
+\section{Exercise sequence}
+
+\subsection{1. Understanding the status message}
+
+The first activity was to look at the ECU's alive status in simple terms. In the CANoe trace screenshots, a decoded status frame named \texttt{BOX\_Status} includes an \texttt{ALIVE\_COUNTER} signal, as well as fields labelled \texttt{POT\_Status}, \texttt{LED\_Status}, and \texttt{Switch\_Status}. These signal names provided a useful introduction to reading the message as a collection of separate values rather than as an unexplained block of bytes.
+
+The alive counter advances as status messages are received and wraps back to its starting value after reaching its maximum. The graphics screenshots show the counter stepping through values from 0 to 15 and then repeating. This is a practical heartbeat-style check: if successive messages arrive and the counter changes as expected, the receiver has evidence that the sender is continuing to report status. A counter alone does not prove that every ECU function is correct, nor does it provide a complete diagnostic of the network.
+
+\reportfigure{Alive_status_explained.png}{Decoded status frame in CANoe, with alive counter, potentiometer, LED, and switch signals visible.}{fig:status-frame}
+\reportfigure{Alive_counter.png}{CANoe graphics view of the alive counter increasing and repeatedly wrapping around.}{fig:alive-overview}
+\reportfigure{Alive_counter_cursors.png}{Counter waveform with a measurement cursor, used to examine a transition in the signal.}{fig:alive-cursor-a}
+\reportfigure{Alive_counter_cursors_2.png}{A second cursor view illustrating counter values at separate points in the trace.}{fig:alive-cursor-b}
+
+\subsection{2. Following the counter in a time plot}
+
+After identifying the field in the trace, I examined the counter in CANoe's Graphics window. A time plot makes the repeated sequence easier to see than a list of individual frames. The screenshots show a stepped ramp, followed by a return to the start of the sequence. Cursor markers can be placed on the plot to read signal values and compare their timestamps.
+
+This was a useful testing habit: first identify a signal in a decoded message, then observe its behaviour over time. In a real test, a reviewer could use the same approach to investigate a counter that stops changing, skips unexpectedly, or appears inconsistent with the message timing. The supplied captures demonstrate the normal repeating pattern, not a deliberately injected fault.
+
+\subsection{3. Comparing the counter with the potentiometer}
+
+The next step was to display \texttt{POT\_Status} alongside \texttt{ALIVE\_COUNTER}. In the CANoe graphics screenshots, the alive counter continues its repeating sequence while the potentiometer status moves in a different, slower pattern. This provides a clear visual comparison between a regularly updated status field and a changing input value.
+
+The decoded trace describes the potentiometer value as ranging from 0 to 255, corresponding to approximately 0 to 3.3~V. That scaling is specific to the signal description shown in the exercise; the screenshots do not document a separate calibration measurement. The activity helped me understand that a physical adjustment is represented in the message as a digital signal value that can be monitored by the test software.
+
+\reportfigure{Alive_counter_and_pot.png}{Potentiometer status plotted with the alive counter during one recorded interval.}{fig:pot-counter-a}
+\reportfigure{Alive_counter_and_pot_2.png}{A second interval showing changes in potentiometer status while the counter continues to advance.}{fig:pot-counter-b}
+
+\subsection{4. Building and using the panel}
+
+Once the signals were understood in the trace and graphics views, I assembled a software panel to make the interaction more direct. The final panel contained three widgets:
+\begin{enumerate}
+    \item a numeric display connected to a display-control signal;
+    \item a meter for visualising a changing value; and
+    \item a slider/knob used to adjust the potentiometer-related input.
+\end{enumerate}
+
+The panel made the relationship between an input and its reported signal more intuitive. I could move the control and observe the resulting status in CANoe rather than infer the change from the physical control alone. The trace screenshots also show a separate control frame labelled \texttt{BOX\_Control}, with \texttt{DISP\_Control} and \texttt{LED\_Control} signals. This illustrates the difference between observing a status message and sending or configuring a control message.
+
+\reportfigure{POT_control.png}{CANoe trace and panel view with a meter, display, and slider; the potentiometer status is visible in the decoded frame.}{fig:pot-panel-a}
+\reportfigure{POT_control_2.png}{Another panel state showing the numeric display and meter responding to signal values.}{fig:pot-panel-b}
+\reportfigure{POT_control_3.png}{The panel includes a labelled slider control alongside the display and meter.}{fig:pot-panel-c}
+\reportfigure{DISP_control.png}{Trace view showing the display-control signal and the corresponding numeric panel widget.}{fig:display-a}
+\reportfigure{DISP_control_track.png}{A later control-panel state, with display, meter, slider, and message-update controls visible.}{fig:display-b}
+
+\subsection{5. Inspecting control frames and signals}
+
+The CANoe Interactive Generator screenshots show the \texttt{BOX\_Control} message configured as a periodic frame with \texttt{LED\_Control} and \texttt{DISP\_Control} fields. Other screenshots show a field chooser and CANoe's simulation and measurement setup. These panels helped illustrate how a test environment can select signals, set values, and present them through a graphical interface.
+
+The captured trace gives \texttt{BOX\_Status} as identifier \texttt{0x200} (512 decimal) and \texttt{BOX\_Control} as \texttt{0x100} (256 decimal). The control frame and its field settings are shown as examples from the supplied configuration; they should not be read as universal CAN identifiers or as a complete description of the ECU's production network.
+
+\reportfigure{event_frame.png}{A decoded status frame and a control frame shown together in CANoe's Trace view.}{fig:frame-pair}
+\reportfigure{event_frame_2.png}{Interactive Generator configuration for a control message, with display and LED signal fields.}{fig:generator-values}
+\reportfigure{event_frame_3.png}{CANoe simulation and measurement setup with the interactive generator configuration.}{fig:generator-setup}
+\reportfigure{frame_chooser.png}{CANoe field chooser opened while inspecting the available trace fields.}{fig:field-chooser}
+
+\section{Physical-layer observation}
+
+The oscilloscope images show CAN bus waveforms alongside protocol decoding. One capture identifies a frame with identifier \texttt{0x100}; another shows \texttt{0x200}. The traces include the frame identifier, data-length field, and data segments, while the voltage waveforms show the transitions associated with bus communication. This provides a useful contrast with CANoe: CANoe presents interpreted messages and signals, whereas the oscilloscope makes the electrical activity visible.
+
+The images are evidence that oscilloscope-based observation was part of the laboratory material, but the available notes do not record probe wiring, measured timing, bus speed, or a detailed physical-layer assessment. I therefore treat the screenshots as visual examples, rather than reporting unrecorded measurements.
+
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.34 (1).jpeg}{Oscilloscope capture with CAN decoding for the frame identified as \texttt{0x100}.}{fig:scope-control}
+\reportfigure{WhatsApp Image 2026-11-18 at 15.28.34 (3).jpeg}{Oscilloscope capture of the frame identified as \texttt{0x200}, with its decoded data fields displayed above the waveform.}{fig:scope-status}
+
+\section{Observations and learning}
+
+The main learning outcome was seeing how the same ECU activity can be examined at different levels. The alive counter was first a field in a decoded CAN frame, then a repeating waveform in a time plot, and finally part of a broader workflow for monitoring whether status messages continued to update. The potentiometer exercise added a physical input to this process: a control movement could be compared with its reported signal value.
+
+Creating the panel also showed the value of a clear test interface. A display, meter, and slider make a small demonstration easier to operate and explain. They do not replace the trace or the electrical measurement; instead, the panel provides a convenient view while the trace and oscilloscope support closer analysis.
+
+The visit also highlighted several practical points:
+\begin{itemize}
+    \item signal names and scaling information are essential for interpreting raw network traffic;
+    \item a periodically changing alive counter can help reveal interrupted or stale communication, but is only one part of a complete test;
+    \item monitoring and stimulating signals are related but distinct activities; and
+    \item correlating software observations with the physical bus improves understanding of what the tools are reporting.
+\end{itemize}
+
+\section{Limitations}
+
+This report is based on the provided description and photographs. No detailed notes were available about the plant's production processes, engineering departments, visit schedule, ECU make or model, CAN bit rate, or formal test criteria. The hardware photographs show the laboratory instruments and demonstration unit, but do not establish additional specifications. Accordingly, the report concentrates on the CANoe and ECU-communication exercise and avoids presenting assumptions as observations.
+
+\section{Conclusion}
+
+The field visit gave me a practical introduction to ECU communication and automotive testing. I followed an alive counter in CANoe, compared it with potentiometer status, examined decoded control and status frames, and assembled a panel with three widgets for displaying and interacting with signals. The oscilloscope captures complemented the software views by showing decoded CAN traffic together with electrical waveforms.
+
+The most useful part of the exercise was connecting the stages of a test workflow: observe a message, understand its signals, watch their behaviour over time, interact with a relevant input, and verify the resulting status in the available tools. This made the relationship between network communication and a human-operated test panel much clearer.
+
+\appendix
+\section{Image coverage}
+
+The report uses the supplied CANoe screenshots, laboratory photographs, and distinct oscilloscope views. Repeated oscilloscope captures that show the same frame and essentially identical waveform have been omitted to keep the report focused. Figure captions describe only information visible in the images or provided in the visit notes.
+
+\end{document}
